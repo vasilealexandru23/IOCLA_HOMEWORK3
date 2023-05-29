@@ -32,63 +32,65 @@ section .text
 
 inorder_intruders:
 	enter 0, 0
-	pusha
-	mov ebx, [ebp + 8]              ; node
-	mov ecx, [ebp + 12]				; parrent
-	mov edx, [ebp + 16]             ; array
+	pusha							; Save the data stored in all registers on stack.
+	mov ebx, [ebp + 8]              ; Node parameter.
+	mov ecx, [ebp + 12]				; Parent parameter.
+	mov edx, [ebp + 16]             ; Array parameter.
 
-	cmp ebx, 0
-	je null_ptr
+	cmp ebx, 0						; Check if the current node is null.
+	je exit_function				; If the node is null exit from this function.
 
-	pusha
-	push edx
-	push ebx
-	push dword [ebx + 4]
-	call inorder_intruders
-	add esp, 12
-	popa
+	pusha							; Save the data stored in all registers on stack.
+	push edx						; Push array on stack.
+	push ebx						; Push node on stack (as parent of node->left).
+	push dword [ebx + 4]			; Push node->left on stack.
+	call inorder_intruders			; Call recursively the function for the left node.
+	add esp, 12						; Clean up the stack.
+	popa							; Restore data in all registers.
 
-	cmp ecx, 0	
-	je continue
-	cmp ebx, [ecx + 4]
-	je left_child
-	jmp right_child
+	cmp ecx, 0						; Check if the current node is root.
+	je continue						; If that's the case, we continue dfs with node->right.
+	cmp ebx, [ecx + 4]				; Check if the current node is parent->left.
+	je left_child					; If current_node == parent->left, we
+									; check the bst property for the left part.
+
+	jmp right_child					; Else, current_node = parrent->right, we
+									; check the bst property for the right part.
 
 left_child:
-	pusha
-	mov esi, [ebx]
-	mov edi, [ecx]
-	cmp edi, esi
-	jle add_intruders
-	popa
-	jmp continue
+	pusha							; Save data stored in all registers on stack.
+	mov esi, [ebx]					; Get node->value.
+	mov edi, [ecx]					; Get parent->value.
+	cmp esi, edi					; Check node->value < parent->value (bst property).
+	jge add_intruders				; If node->value >= parent->value, add intruder in array.
+	popa							; Restore the data stored in all registers on stack.
+	jmp continue					; Continue dfs with node->right.
 
 right_child:
-	pusha
-	mov esi, [ebx]
-	mov edi, [ecx]
-	cmp edi, esi
-	jge add_intruders
-	popa
-	jmp continue	
+	pusha							; Save the data stored in all registers on stack.
+	mov esi, [ebx]					; Get node->value.
+	mov edi, [ecx]					; Get parent->value.
+	cmp esi, edi					; Check node->value > parent->value (bst property).
+	jle add_intruders				; If node->value <= parent->value, add intruder in array.
+	popa							; Restore the data stored in all registers on stack.
+	jmp continue					; Continue dfs with node->right.
 
 add_intruders:
-	mov ecx, [array_idx_2]
-	mov [edx + 4 * ecx], esi
-	inc ecx
-	mov [array_idx_2], ecx
-	popa
+	mov ecx, [array_idx_2]			; Get the current index in array.
+	mov [edx + 4 * ecx], esi		; Do array[array_idx_2] = node->value.
+	inc dword [array_idx_2]			; Increase the index array (array_idx_2++).
+	popa							; Restore the data in registers.
 
 continue:
-	pusha
-	push edx
-	push ebx
-	push dword [ebx + 8]
-	call inorder_intruders
-	add esp, 12
-	popa
+	pusha							; Save the data stored in all registers on stack.
+	push edx						; Push array on stack.
+	push ebx						; Push node on stack (as parent for node->right).
+	push dword [ebx + 8]			; Push node->right on stack.
+	call inorder_intruders			; Call recursively the function for the right node.
+	add esp, 12						; Clean up the stack.
+	popa							; Restore in registers the old data.
 
-null_ptr:
-	popa
-	leave
+exit_function:
+	popa							; Restore in registers the old data.
+	leave							; Exit from function.
 	ret

@@ -29,36 +29,36 @@ section .data
 
 inorder_parc:
 	enter 0, 0
-	pusha
-	mov ebx, [ebp + 8]              ; node
-	mov ecx, [ebp + 12]             ; array
+	pusha							; Save the data stored in all registers on stack.
+	mov ebx, [ebp + 8]              ; Node parameter.
+	mov ecx, [ebp + 12]             ; Array parameter.
 
-	cmp ebx, 0
-	je null_ptr
+	cmp ebx, 0						; Check if the current node is null.
+	je null_ptr						; If the node is null exit from this function.
 
-	pusha
-	push ecx
-	push dword [ebx + 4]
-	call inorder_parc
-	add esp, 8
-	popa
+	pusha							; Save the data stored in all registers on stack.
+	push ecx						; Push array on stack.
+	push dword [ebx + 4]			; Push node->left on stack.
+	call inorder_parc				; Call recursively the function for the left node.
+	add esp, 8						; Clean up the stack.
+	popa							; Restore the registers old data.
 
-	pusha
-	mov eax, [ebx]
-	mov edx, [array_idx_1]
-	mov [ecx + 4 * edx], eax
-	inc edx
-	mov [array_idx_1], edx
-	popa
+	pusha							; Save the data stored in all registers on stack.
+	mov eax, [ebx]					; Save in eax the current node's value(node->value).
+	mov edx, [array_idx_1]			; Get in edx the index in the array.
+	mov [ecx + 4 * edx], eax		; Do array[array_idx_1] = node->value.
+	inc edx							; Increment the index in our array.
+	mov [array_idx_1], edx			; Update the index in our array.
+	popa							; Restore the registers old data.
 
-	pusha
-	push ecx
-	push dword [ebx + 8]
-	call inorder_parc
-	add esp, 8
-	popa
+	pusha							; Save the data stored in all registers on stack.
+	push ecx						; Push array on stack.
+	push dword [ebx + 8]			; Push node->right on stack.
+	call inorder_parc				; Call recursively the function for the right node.
+	add esp, 8						; Clean up the stack.
+	popa							; Restore the registers old data.
 	
 null_ptr:
-	popa
-	leave
+	popa							; Restore the registers old data.
+	leave							; Exit from function.
 	ret
