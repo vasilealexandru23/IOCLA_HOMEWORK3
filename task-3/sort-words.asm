@@ -9,7 +9,7 @@ extern strcmp
 extern strlen
 
 section .data
-	delimiters db " ,.", 0 	; delimiters for strtok
+	delimiters db " ,.", 0 		; delimiters for strtok
 
 section .text
 
@@ -21,183 +21,162 @@ sort:
 	mov ebp, esp
 	pusha
 
-	mov eax, [ebp + 8]		; words
-	mov ebx, [ebp + 12]		; number_words
-	mov ecx, [ebp + 16]		; size		
+	mov eax, [ebp + 8]			; words
+	mov ebx, [ebp + 12]			; number_words
+	mov ecx, [ebp + 16]			; size		
 
-	push ebx
-	push ecx
-	push edx
-	push esi
-	push edi
+    pusha						; Save the data stored in all registers on stack.
+	push cmp_func				; Push the compare function for qsort on stack.
+	push ecx					; Push the size on stack.
+	push ebx					; Push the number of words on stack.
+	push eax					; Push the vector to be sorted on stack.
+	call qsort					; Call qsort.
+	add esp, 16					; Clean up the stack.
+	popa						; Restore in registers the old data.
 
-	push cmp_func
-	push ecx
-	push ebx
-	push eax
-	call qsort
-	add esp, 16
-
-	pop edi
-	pop esi
-	pop edx
-	pop ecx
-	pop ebx
-
-	popa
-	leave
+	popa						; Restore in registers the old data.
+	leave						; Exit from function.
 	ret
 
 cmp_func:
-	push ebp
-    mov ebp, esp
+	enter 0, 0	
 
-	push ebx
+	push ebx					; Save all registers except eax.
 	push ecx
 	push edx
 	push esi
 	push edi
 
-    mov ebx, [ebp + 8]      ; pointer to first string
-	mov ebx, dword [ebx]
-    mov esi, [ebp + 12]       ; pointer to second string
-	mov esi, dword [esi]
+    mov ebx, [ebp + 8]			; Get pointer first string.
+	mov ebx, dword [ebx]		; Get the first string.
+    mov esi, [ebp + 12]       	; Get pointer to second string.
+	mov esi, dword [esi]		; Get the second string.
 
-	push ebx
-	call strlen
-	add esp, 4
+	push ebx					; Push first string on stack.
+	call strlen					; Get the size of the first string.
+	add esp, 4					; Clean up the stack.
 
-	mov ebx, [ebp + 8]
+	mov ebx, [ebp + 8]			; Restore the strings.
 	mov ebx, dword [ebx]
 	mov esi, [ebp + 12]
 	mov esi, dword [esi]
 
-	mov edx, eax
-	push edx
+	mov edx, eax				; Get in edx the strlen of first string.
+	push edx					; Save strlen(string1) on stack.
 
-	push esi
-	call strlen
-	add esp, 4
+	push esi					; Push second string on stack.
+	call strlen					; Get the size of the second string.
+	add esp, 4					; Clean up the stack.
 
-	pop edx
+	pop edx						; Restore strlen(string1) in edx.
 
-	cmp edx, eax
+	cmp edx, eax				; Compare the sizes of the strings.
 	jg done_compare
-	je continue_comparing
+	je continue_comparing		; Compare with second criteria.
 
-	xor eax, eax
+	xor eax, eax				; Cleare this register to return 0.
 
-	pop edi
+	pop edi						; Restore the old data in this registers.
 	pop esi
 	pop edx
 	pop ecx
 	pop ebx
   
-    mov esp, ebp
-    pop ebp
+	leave						; Exit from the compare function.
     ret
 
 done_compare:
-	xor eax, eax
-	inc eax
+	xor eax, eax				; Clear the restore register.
+	inc eax						; Increase eax to return 1.
 
-	pop edi
+	pop edi						; Restore the old data in this registers.
 	pop esi
 	pop edx
 	pop ecx
 	pop ebx
   
-    mov esp, ebp
-    pop ebp
+	leave						; Exit from the compare function.
     ret
 
-    ; Compare the strings using strcmp
 continue_comparing:
-    push esi
-    push ebx
-    call strcmp
-    add esp, 8
+    push esi					; Push second string on stack.
+    push ebx					; Push first string on stack.
+    call strcmp					; Compare them lexicographically.
+    add esp, 8					; Clean up the stack.
 
-	pop edi
+	pop edi						; Restore the old data in this registers.
 	pop esi
 	pop edx
 	pop ecx
 	pop ebx
   
-    mov esp, ebp
-    pop ebp
+	leave						; Exit from the compare function.
     ret
 
 ;; get_words(char *s, char **words, int number_of_words)
 ;  separa stringul s in cuvinte si salveaza cuvintele in words
 ;  number_of_words reprezinta numarul de cuvinte
 get_words:
-	push ebp
-	mov ebp, esp
-	pusha
+	enter 0, 0
+	pusha						; Save data from this registers on stack.
 
-	mov eax, [ebp + 8]		; text
-	mov ebx, [ebp + 12]		; words
-	mov ecx, [ebp + 16]		; number_of_words
-	xor edx, edx
+	mov eax, [ebp + 8]			; text
+	mov ebx, [ebp + 12]			; words
+	mov ecx, [ebp + 16]			; number_of_words
 
-	push eax
+	push eax					; Save the data stored in all registers on stack.
 	push ecx
 	push edx
 	push esi
 	push edi
 	push ebx
 
-	push delimiters
-	push eax
-	call strtok
-	add esp, 8
+	push delimiters				; Push delimiters on stack.
+	push eax					; Push text on stack.
+	call strtok					; Call strtok with our parameters.
+	add esp, 8					; Clean up the stack.
 
-	pop ebx
-	mov dword [ebx], eax
+	pop ebx						; Restore ebx (words array).
+	mov dword [ebx], eax		; Put the first word in our words array.
 
-	pop edi
+	pop edi						; Restore registers.
 	pop esi
 	pop edx
 	pop ecx
 	pop eax
 
-	add ebx, 4
-	dec ecx
+	add ebx, 4					; Get to the next element.
+	dec ecx						; Decrement the number of words.
 continue_strtok:
-	inc edx
-	cmp ecx, 0
-	je done
+	cmp ecx, 0					; Check if we built all the words.
+	je done						; If we have no words, we break the loop.
 
- 	push eax
+	push eax					; Save the data stored in all registers on stack.
 	push ecx
 	push edx
 	push esi
 	push edi
 	push ebx
 
-	push delimiters
-	push 0
-	call strtok
-	add esp, 8
+	push delimiters				; Push delimiters on stack.
+	push 0						; Push "NULL" on stack.
+	call strtok					; Call strtok with our parameters.
+	add esp, 8					; Clean up the stack.
 
-	pop ebx
-	mov dword [ebx], eax
+	pop ebx						; Restore ebx (words array).
+	mov dword [ebx], eax		; Put the word returned by strtok in our words array.
 
-	pop edi
+	pop edi						; Restore registers.
 	pop esi
 	pop edx
 	pop ecx
 	pop eax
 
-	dec ecx
-	add ebx, 4
-	jmp continue_strtok
+	add ebx, 4					; Get to the next element.
+	dec ecx						; Decrement the number of words.
+	jmp continue_strtok			; Continue the loop.
 
 done:
-	imul edx, 4
-	sub ebx, edx
-
-	popa
-	leave
+	popa						; Restore in registers the old data.
+	leave						; Exit from function.
 	ret
